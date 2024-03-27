@@ -144,9 +144,129 @@ RowMajorMatriz MACRO
     MOV SI, AX
     MOV matriz[SI], 80
 ENDM
+
+CrearArchivo MACRO nombreArchivo, handler
+    LOCAL ManejarError, FinCrearArchivo
+    MOV AH, 3Ch ; REG LLAMADA
+    MOV CX, 00h ; AT
+    LEA DX, nombreArchivo ; nombre puntajes.txt
+    INT 21h
+
+    MOV handler, AX ; HANDLER
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinCrearArchivo
+
+    ManejarError:
+        Print salto
+        Print errorCrearArchivo
+        getOpcion opcion
+    ;si si esta bien
+    FinCrearArchivo:
+ENDM
+
+AbrirArchivo MACRO nombreArchivo, handler
+    LOCAL ManejarError, FinAbrirArchivo
+    MOV BL, 0
+
+    MOV AH, 3Dh ; codigo de interrupcion
+    MOV AL, 00h ; modo de apertura del archivo, 0 -> Lectura | 1 -> Escritura | 2 -> Lectura/Escritura
+    LEA DX, nombreArchivo ; Nombre del archivo
+    INT 21h
+
+    MOV handler, AX ; Capturar el handler asignado al archivo (16 bits)
+    RCL BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinAbrirArchivo
+
+    ManejarError:
+        Print salto
+        Print errorAbrirArchivo
+        getOpcion opcion
+
+    FinAbrirArchivo:
+ENDM
+
+CerrarArchivo MACRO handler
+    LOCAL ManejarError, FinCerrarArchivo
+
+    MOV AH, 3Eh ; Codigo de interrupcion
+    MOV BX, handler ; handler del archivo
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinCerrarArchivo
+
+    ManejarError:
+        Print salto
+        Print errorCerrarArchivo
+        getOpcion opcion
+
+    FinCerrarArchivo:
+ENDM
+
+LeerArchivo MACRO buffer, handler
+    LOCAL ManejarError, FinLeerArchivo
+
+    MOV AH, 3Fh ; Codigo de interrupcion
+    MOV BX, handler ; handler del archivo
+    MOV CX, 300 ; Cantidad de bytes que se van a leer
+    LEA DX, buffer ; Posicion en memoria del buffer donde se almacenara el texto leido
+    INT 21h
+
+    MOV BL, 0
+    RCL BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinLeerArchivo
+
+    ManejarError:
+        Print salto
+        Print errorLeerArchivo
+        getOpcion opcion
     
+    FinLeerArchivo:
+ENDM
+
+EscribirArchivo MACRO cadena, handler
+    LOCAL ManejarError, FinEscribirArchivo
+
+    MOV AH, 40h ; Codigo de interrupcion
+    MOV BX, handler ; Handler de archivo
+    MOV CX, 120 ; Cantidad de bytes que se van a escribir
+    LEA DX, cadena1 ; Direccion de la cadena a escribir
+    INT 21h
+
+    RCL BL, 1 ; Capturar el bit de CF en el registro BL
+    AND BL, 1 ; Validar que en BL quede un 1 o 0
+    CMP BL, 1 ; Verificar si no hay codigo de error
+    JE ManejarError
+    JMP FinEscribirArchivo
+
+    ManejarError:
+        Print salto
+        Print errorEscribirArchivo
+        getOpcionOpcion opcion
     
-    
+    FinEscribirArchivo:
+ENDM
+
+PosicionarApuntador MACRO handler
+    MOV AH, 42h ; Codigo Interrupcion
+    MOV AL, 02h ; Modo de posicionamiento
+    MOV BX, handler ; handler archivo
+    MOV CX, 00h ; offset mas significativo
+    MOV DX, 00h ; offset menos significativo
+    INT 21h
+
+ENDM
+
 .MODEL small
 
 .STACK 64h
@@ -171,6 +291,18 @@ ENDM
     opcion db 1 dup("$")
     row db 1 dup("$")
     col db 1 dup("$")
+    ;-----------------
+    handlerArchivo dw ? ; Handler o manejador del archivo de 16 bits
+    nombreArchivo db "puntaje.txt", 00h ; Nombre del archivo, DEBE TERMINAR EN CARACTER NULO
+    errorCrearArchivo db "Ocurrio Un Error Al Crear El Archivo", "$"
+    errorAbrirArchivo db "Ocurrio Un Error Al Abrir El Archivo", "$"
+    errorCerrarArchivo db "Ocurrio Un Error Al Cerrar Archivo", "$"
+    errorLeerArchivo db "Ocurrio Un Error Al Leer Archivo", "$"
+    errorEscribirArchivo db "Ocurrio Un Error Al Escribir Archivo", "$"
+    contentArchivo db "Este es un texto de prueba para escribir en los archivos"
+    archivoCreado db 10, 13, "El Archivo Se Creo Correctamente", "$"
+    buffer db 300 dup("$") ; Buffer para almacenar el contenido leido de un archivo
+
 .CODE
     MOV AX, @data
     MOV DS, AX
@@ -251,7 +383,7 @@ ENDM
         ; si desea continuar
         Print mensajeMenuContinuar
         getOpcion opcionContinuar
-        
+
         CMP opcionContinuar, 121 ; 'y' 
         JNE NoContinuar
 
@@ -264,9 +396,47 @@ ENDM
 
         
         ImprimirPuntajes:
+
+
+        AuxSalir: 
+            JMP Salir
+
         ImprimirReportes:
+            CrearArchivo nombreArchivo, handlerArchivo
+            CMP opcion, 13  
+            JE AuxSalir
+
+            PosicionarApuntador handler
+            EscribirArchivo contentArchivo, handlerArchivo
+            CMP opcion, 13  ; Verificar que no hay ningun error
+            JE AuxSalir4
+
+            CerrarArchivo handlerArchivo
+            CMP opcion, 13  ; Verificar que no hay ningun error
+            JE AuxSalir4
+            JMP ContinuarArchivos
+        
+        AuxSalir4:
+            JMP Salir
+
+        ContinuarArchivos:
+            Print archivoCreado
+            getOpcion opcion
+
+            AbrirArchivo nombreArchivo, handlerArchivo
+            CMP opcion, 13  ; Verificar que no hay ningun error
+            JE AuxSalir4
+
+            LeerArchivo buffer, handlerArchivo
+            CMP opcion, 13  ; Verificar que no hay ningun error
+            JE Salir
+
+            CerrarArchivo handlerArchivo
+            CMP opcion, 13 
+            JE Salir
 
         Salir:
+            Print buffer
             MOV AX, 4C00h 
             INT 21h
     Main ENDP
