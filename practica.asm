@@ -156,6 +156,118 @@ RowMajorMatriz MACRO
     MOV SI, AX
     MOV matriz[SI], 80
 ENDM
+
+AbrirArchivo MACRO nombreArchivo, handler
+    LOCAL ManejarError, FinAbrirArchivo
+    MOV AH, 3Dh
+    MOV AL, 00h
+    LEA DX, nombreArchivo
+    INT 21h
+
+    MOV handler, AX
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinAbrirArchivo
+
+    ManejarError:
+        Print salto
+        Print errorAbrirArchivo
+        GetOpcion
+    
+    FinAbrirArchivo:
+ENDM
+
+CrearArchivo MACRO nombreArchivo, handler
+    LOCAL ManejarError, FinCrearArchivo
+    MOV AH, 3Ch
+    MOV CX, 00h
+    LEA DX, nombreArchivo
+    INT 21h
+
+    MOV handler, AX
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinCrearArchivo
+
+    ManejarError:
+        Print salto
+        Print errorCrearArchivo
+        GetOpcion
+    
+    FinCrearArchivo:
+ENDM
+
+EscribirArchivo MACRO cadena, handler
+    LOCAL ManejarError, FinEscribirArchivo
+    MOV AH, 40h
+    MOV BX, handler
+    MOV CX, 300
+    LEA DX, cadena
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinEscribirArchivo
+
+    ManejarError:
+        Print salto
+        Print errorEscribirArchivo
+        GetOpcion
+
+    FinEscribirArchivo:
+ENDM
+
+LeerArchivo MACRO buffer, handler
+    LOCAL ManejarError, FinLeerArchivo
+    MOV AH, 3Fh
+    MOV BX, handler
+    MOV CX, 300
+    LEA DX, buffer
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    Print salto
+    Print buffer
+    GetOpcion
+    JMP FinLeerArchivo
+
+    ManejarError:
+        Print salto
+        Print errorLeerArchivo
+        GetOpcion
+
+    FinLeerArchivo:
+ENDM
+
+CerrarArchivo MACRO handler
+    LOCAL ManejarError, FinCerrarArchivo
+    MOV AH, 3Eh
+    MOV BX, handler
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinCerrarArchivo
+
+    ManejarError:
+        Print salto
+        Print errorCerrarArchivo
+        GetOpcion
+
+    FinCerrarArchivo:
+ENDM
+
 .MODEL small
 .STACK 64h
 .DATA
@@ -163,8 +275,10 @@ ENDM
     mensajeInicio db " Universidad De San Carlos De Guatemala", 10, 13, " Facultad De Ingenieria", 10, 13, " Escuela de ciencias y sistemas", 10, 13," Arquitectura de computadores y ensambladores 1", 10, 13," SECCION A", 10, 13, "$"
     mensajeDatos db " PRIMER SEMESTRE 2024", 10, 13, " Natalia Mariel Calderon Echeverria", 10, 13, " ----> 202200007 - PRACTICA 3", 10, 13, "$"
     mensajeSeparacion db "========================================", 10, 13, "$"
-    mensajeTitulo db " ========CHESS - NATALIA MARIEL =========", 10, 13, "$"
+    mensajeTitulo db 10, 13," ========CHESS - NATALIA MARIEL =========", 10, 13, "$"
     mensajeMenuContinuar db "Desea Continuar? (y/n): ", "$"
+    punt1 db 10, 13,"NATALIA ====== 12"
+    punt2 db 10, 13,"pepito ====== 18"
     mensajeMenu db "l -->(1) Nuevo Juego      l", 10, 13, "l -->(2) Puntajes           l", 10, 13, "l -->(3) Reportes          l", 10, 13, "l -->(4) Salir              l", 10, 13, " --->>>>> Seleccione del menu: ", "$"
     msg1 db 10, 13, 10, 13, "Ingrese la fila: ", "$"
     msg2 db 10, 13, "Ingrese la columna: ", "$"
@@ -174,6 +288,8 @@ ENDM
     msgSalida db "Saliendo Del Programa...", "$"
     msgEFila db 10, 13, "La Fila Ingresada Es Incorrecta", "$"
     msgEColumna db 10, 13, "La Columna Ingresada Es Incorrecta", "$"
+    contentArchivoDos db 10, 13,"pepito ====== 18"
+    reportehtml db "REPORTE HTML", "$"
     opcionContinuar db 1 dup("$")
     jugador_message db 10, 13, "natalia ========= $"
     opcion db 1 dup("$")
@@ -181,6 +297,23 @@ ENDM
     col db 1 dup("$")
     counter_units db 0   ; unidad
     counter_tens db 0    ; decena
+    handlerArchivo dw ?
+    handlerArchivohtml dw ?
+    nombreArchivo db "Puntajes.txt", 00h
+    nombreHTML db "Reporte.htm", 00h
+    errorAbrirArchivo db "error - Abrir Archivo", "$"
+    errorCrearArchivo db "error - Crear Archivo", "$"
+    errorEscribirArchivo db "error - Escribir Archivo", "$"
+    errorLeerArchivo db "error -  Cerrar Archivo", "$"
+    errorCerrarArchivo db "error - Cerrar Archivo", "$"
+    contentArchivo db 10, 13,"NATALIA ====== 12"
+    mensajehtml1 db "<p>Universidad De San Carlos De Guatemala</p>", 10, 13, " <p>Facultad De Ingenieria Escuela de ciencias y sistemas</p>", 10, 13," <p>Arquitectura de computadores y ensambladores 1</p>", 10, 13," <p>SECCION A</p>", 10, 13, "$"
+    mensajehtml2 db "<p>PRIMER SEMESTRE 2024</p>", 10, 13, "<p>Universidad De San Carlos De Guatemala</p>", 10, 13, "<p>Natalia Mariel Calderon Echeverria</p>", 10, 13," <p>----&gt; 202200007 - PRACTICA 3</p>", 10, 13, "$"
+    mensajehtml3 db "<p> 12 de abril de 2024</p>",10, 13, "<p>------------REPORTES------------</p>", 10, 13, "<p>NOMBRE ----------- TIEMPO</p>", 10, 13, "<p>NATALIA ====== 12</p>", 10, 13," <p>pepito ====== 18</p>", 10, 13, "$"
+
+    archivoPuntaje db "PUNTAJES", "$"
+    buffer db 300 dup("$")
+
 .CODE
     MOV AX, @data
     MOV DS, AX
@@ -311,11 +444,37 @@ DisplayCounter ENDP
 
         
         ImprimirPuntajes:
-        call IncrementCounter
-        call DisplayCounter
+        ;call IncrementCounter
+        ;call DisplayCounter
+        Print punt1
+        Print punt2
+        CrearArchivo nombreArchivo, handlerArchivo
+        EscribirArchivo contentArchivo, handlerArchivo
+        EscribirArchivo contentArchivoDos, handlerArchivo
+        CerrarArchivo handlerArchivo
+        JMP ContinuarArchivos
+        
         JMP Menu
 
         ImprimirReportes:
+        Print reportehtml
+        
+        CrearArchivo nombreHTML, handlerArchivohtml
+        EscribirArchivo   mensajehtml1, handlerArchivohtml
+        EscribirArchivo   mensajehtml2, handlerArchivohtml
+        EscribirArchivo   mensajehtml3, handlerArchivohtml
+        CerrarArchivo handlerArchivohtml
+        
+        JMP Menu
+
+        ContinuarArchivos:
+            Print salto
+            ;GetOpcion
+            AbrirArchivo nombreArchivo, handlerArchivo
+            LeerArchivo buffer, handlerArchivo
+            CerrarArchivo handlerArchivo
+            CMP opcion, 13
+            JMP Menu
 
         Salir:
             MOV AX, 4C00h 
