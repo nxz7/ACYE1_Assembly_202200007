@@ -1,13 +1,245 @@
-; * Cuando se ejecuta el macro de limpiar consola
-; * Se limpian las 8 paginas del modo texto por lo que
-; * Es necesario que despues de limpiar, se seleccione
-; * La pagina que se va a utilizar
+Totito MACRO
+    LOCAL Barra1, Barra2, Barra3, Barra4, SalirTablero
+    XOR AX, AX
+    XOR CX, CX
+    XOR DX, DX
+
+    MOV AL, 7
+    MOV CX, 105
+    MOV DX, 0
+    MOV AH, 0Ch
+    
+    Barra1:
+        INT 10h
+        
+        INC DX
+        INC DX
+        
+        CMP DX, 200
+        JB Barra1
+        
+        INC CX
+        
+        CMP CX, 110
+        JA ContinuarBarra2
+        MOV DX, 0
+        JMP Barra1
+        
+    ContinuarBarra2:
+        MOV CX, 210
+        MOV DX, 0
+        
+    Barra2:
+        INT 10h
+        
+        INC DX
+        INC DX
+        
+        CMP DX, 200
+        JB Barra2
+        
+        INC CX
+        
+        CMP CX, 215
+        JA ContinuarBarra3
+        MOV DX, 0
+        JMP Barra2
+
+    ContinuarBarra3:
+        MOV CX, 0
+        MOV DX, 60
+
+    Barra3:
+        INT 10h
+
+        INC CX
+
+        CMP CX, 320
+        JB Barra3
+
+        INC DX
+        INC DX
+
+        CMP DX, 65
+        JA ContinuarBarra4
+        MOV CX, 0
+        JMP Barra3
+
+
+    ContinuarBarra4:
+        MOV CX, 0
+        MOV DX, 125
+
+    Barra4:
+        INT 10h
+
+        INC CX
+
+        CMP CX, 320
+        JB Barra4
+
+        INC DX
+
+        CMP DX, 130
+        JA SalirTablero
+        MOV CX, 0
+        JMP Barra4
+
+    SalirTablero:
+ENDM
+
+PPX MACRO
+    LOCAL Ciclo1, Ciclo2
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+
+    MOV BL, filaMov
+    MOV DL, posicionesFila[BX]
+
+    MOV AL, 6
+    MOV AH, 0Ch
+    MOV BL, 0
+
+    Ciclo1:
+        INT 10h
+
+        INC CX
+        INC DX
+        INC BL
+        CMP BL, 30
+        JNE Ciclo1
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+    ADD CL, 30
+
+    MOV BL, filaMov
+    MOV DL, posicionesFila[BX]
+
+    MOV BL, 0
+
+    Ciclo2:
+        INT 10h
+
+        DEC CX
+        INC DX
+        INC BL
+        CMP BL, 30
+        JNE Ciclo2
+ENDM
+
+PPO MACRO
+    LOCAL Part1, Part2, Part3, Part4
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+
+    MOV AL, 5
+    MOV AH, 0Ch
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+    
+    MOV BL, filaMov
+    MOV DL, posicionesFila[BX]
+
+    MOV BL, 0
+
+    Part1:
+        INT 10h
+
+        INC CX
+        INC BL
+        CMP BL, 31
+        JNE Part1
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+
+    MOV BL, 0
+
+    Part2:
+        INT 10h
+
+        INC DX
+        INC BL
+        CMP BL, 31
+        JNE Part2
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+    ADD CL, 30
+    
+    MOV BL, filaMov
+    MOV DL, posicionesFila[BX]
+    ADD DL, 30
+
+    MOV BL, 0
+
+    Part3:
+        INT 10h
+
+        DEC CX
+        INC BL
+        CMP BL, 31
+        JNE Part3
+
+    MOV BL, colMov
+    MOV CL, lugarColumna[BX]
+    ADD CL, 30
+
+    MOV BL, 0
+
+    Part4:
+        INT 10h
+
+        DEC DX
+        INC BL
+        CMP BL, 31
+        JNE Part4
+ENDM
+
+PedirMovimiento MACRO
+    MOV AX, 03h
+    INT 10h
+
+    MOV Ah, 09h
+    LEA DX, pedirFila
+    INT 21h
+
+    MOV AH, 1
+    INT 21h
+
+    SUB AL, 49
+    MOV filaMov, AL
+
+    MOV Ah, 09h
+    LEA DX, salto
+    INT 21h
+
+    MOV Ah, 09h
+    LEA DX, pedirColumna
+    INT 21h
+
+    MOV AH, 1
+    INT 21h
+
+    SUB AL, 49
+    MOV colMov, AL
+ENDM
+
 LimpiarConsola MACRO
     MOV AX, 03h 
-    INT 10h        ; * Interrupcion para limpiar consola (LIMPIA TODAS LAS PAGINAS)
+    INT 10h        
 
-    MOV AH, 05h             ; * Seleccionamos la pagina que vamos a utilizar
-    MOV AL, paginaActual    ; * El numero de pagina esta almacenado en la variable Pagina actual
+    MOV AH, 05h             ; UNA DE OCHO PAGINAS
+    MOV AL, paginaActual    
     INT 10h
 ENDM
 
@@ -19,12 +251,12 @@ ENDM
 
 
 PrintCadena MACRO fila, columna, pagina, longitud, cadena, color
-    MOV AL, 1           ; ? PONER AL en 1 indica que se va a actualizar el cursor despues del print (VER DOCUMENTACION INTERRUPCIONES)
-    MOV BH, pagina      ; ? Pagina en donde se hara el print de la cadena
-    MOV BL, color       ; ? Color que tendran los caracteres impresos
-    MOV CX, longitud    ; ? Longitud de la cadena a imprimir
-    MOV DL, columna     ; ? Columna donde iniciara el print
-    MOV DH, fila        ; ? Fila donde iniciara el print, EN MODO TEXTO SE TRABAJA CON UN ESPACIO DE 80 Columnas * 25 Filas
+    MOV AL, 1           
+    MOV BH, pagina      
+    MOV BL, color       
+    MOV CX, longitud    
+    MOV DL, columna     
+    MOV DH, fila        
     MOV BP, cadena      
     MOV AH, 13h
     INT 10h
@@ -107,7 +339,7 @@ Animacion1 MACRO
         MOV filaActual, AL
         MOV fila, AL
 
-        ; ! CASO CONTRARIO SE HACE UN SALTO ABSOLUTO HACIA LA ETIQUETA "Ciclo" EVITANDO ASI ERRORES CON EL TAMAÑO DE LOS SALTOS
+        ; ! SI SE PASA DE LOS SALTOS
         CMP CX, 0 
         JE TerminarCiclo 
         LimpiarConsola  
@@ -490,6 +722,18 @@ dato7 db "202200007                             "
     saltoCadena dw ?
     paginaActual db 0
 
+
+    lugarColumna db 35, 145, 250
+    posicionesFila db 15, 80, 150
+
+    filaMov db 0
+    colMov db 0
+
+    salto db 10, 13, "$"
+    pedirFila db ">>> fila (1-3): ", "$"
+    pedirColumna db ">>> columna(1-3): ", "$"
+    turno db 0
+
 .CODE
 
     MOV AX, @data
@@ -523,11 +767,11 @@ dato7 db "202200007                             "
         MOV saltoCadena, OFFSET op4
         PrintCadena 10, 11, 0, 27, saltoCadena, 6 
         
-        ; Wait for user input
+        ; INPUT
         Mov ah, 01h
         Int 21h
 
-        ; Check the pressed key
+        ; LA TECLA
         CMP AL, '1'
         JE Option1Aux
         CMP AL, '2'
@@ -537,7 +781,7 @@ dato7 db "202200007                             "
         CMP AL, '4'
         JE Option4Aux
 
-        ; Repeat the menu if the input is invalid
+        ; MENU
         JMP MostrarMenu
 
     Option1Aux:
@@ -564,8 +808,47 @@ LimpiarConsola
         LimpiarConsola
         MOV saltoCadena, OFFSET txt1
         PrintCadena 11, 5, 0, 13, saltoCadena, 2
+        JMP Tablero
+
         JMP MostrarMenu
         
+        Tablero:
+            PedirMovimiento
+
+            MOV AL, 13h
+            MOV AH, 00h
+            INT 10h
+
+            Totito
+
+            CMP turno, 0
+            JE Pintar_X
+
+            CMP turno, 1
+            JE Pintar_O
+
+            Pintar_X:
+                PPX
+                MOV AL, turno
+                INC AL
+                MOV turno, AL
+                JMP SeguirTablero
+
+            Pintar_O:
+                PPO
+                MOV AL, turno
+                DEC AL
+                MOV turno, AL
+
+            SeguirTablero: 
+                MOV AH, 10h
+                INT 16h
+
+                MOV AL, 03h
+                MOV AH, 00h
+                INT 10h
+
+            JMP MostrarMenu
 
     Option2:
         LimpiarConsola
@@ -657,10 +940,9 @@ LimpiarConsola
 
 
     Option3:
-        ; Clear screen and perform action for option 3
+        ; LIMPIARRRRR
         LimpiarConsola
-        ; Your code for option 3 here
-        ; Example:
+
         MOV saltoCadena, OFFSET txt3
         PrintCadena 11, 5, 0, 13, saltoCadena, 6
 
