@@ -272,8 +272,8 @@ ENDM
 .STACK 64h
 .DATA
     salto db 10, 13, "$" ; \n
-    mensajeInicio db " Universidad De San Carlos De Guatemala", 10, 13, " Facultad De Ingenieria", 10, 13, " Escuela de ciencias y sistemas", 10, 13," Arquitectura de computadores y ensambladores 1", 10, 13," SECCION A", 10, 13, "$"
-    mensajeDatos db " PRIMER SEMESTRE 2024", 10, 13, " Natalia Mariel Calderon Echeverria", 10, 13, " ----> 202200007 - PRACTICA 3", 10, 13, "$"
+    mensajeInicio db " Arquitectura de computadores y ensambladores 1", 10, 13," SECCION A", 10, 13, "$"
+    mensajeDatos db " PRIMER SEMESTRE 2024", 10, 13, " Natalia Mariel Calderon Echeverria", 10, 13, " ----> 202200007 - PROYECTO 2", 10, 13, "$"
     mensajeSeparacion db "========================================", 10, 13, "$"
     mensajeTitulo db 10, 13," ========CHESS - NATALIA MARIEL =========", 10, 13, "$"
     mensajeMenuContinuar db "Desea Continuar? (y/n): ", "$"
