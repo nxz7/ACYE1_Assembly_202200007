@@ -3,22 +3,22 @@ LimpiarConsola MACRO
     INT 10h
 ENDM
 
-PrintCadena MACRO cadena
+Println MACRO cadena
     MOV AH, 09h
     LEA DX, cadena
     INT 21h
 ENDM
 
-CrearCadena MACRO valor, cadena
+LinkNum MACRO valor, cadena
     LOCAL CICLO, DIVBASE, SALIRCC, ADDZERO, ADDZERO2
 
     CICLO:
         MOV DX, 0
         MOV CX, valor
-        CMP CX, base
+        CMP CX, rgbb
         JB DIVBASE
 
-        MOV BX, base
+        MOV BX, rgbb
         MOV AX, valor
         DIV BX
         MOV cadena[SI], AL
@@ -28,17 +28,17 @@ CrearCadena MACRO valor, cadena
         MUL BX
         SUB valor, AX
 
-        CMP base, 1
+        CMP rgbb, 1
         JE SALIRCC
         
         DIVBASE:
             CMP valor, 0
             JE ADDZERO
 
-            MOV AX, base
+            MOV AX, rgbb
             MOV BX, 10
             DIV BX
-            MOV base, AX
+            MOV rgbb, AX
             JMP CICLO
             
             ADDZERO:
@@ -47,8 +47,8 @@ CrearCadena MACRO valor, cadena
     SALIRCC:
 ENDM
 
-OpenFile MACRO
-    LOCAL ErrorToOpen, ExitOpenFile
+AbrirCSV MACRO
+    LOCAL ErrorToOpen, ExitAbrirCSV
     MOV AL, 2
     MOV DX, OFFSET filename + 2
     MOV AH, 3Dh
@@ -57,52 +57,52 @@ OpenFile MACRO
     JC ErrorToOpen
 
     MOV handlerFile, AX
-    PrintCadena salto
-    PrintCadena exitOpenFileMsg
-    JMP ExitOpenFile
+    Println salto
+    Println archivoLeido 
+    JMP ExitAbrirCSV
 
     ErrorToOpen:
         MOV errorCode, AL
         ADD errorCode, 48
 
-        PrintCadena salto
-        PrintCadena errorOpenFile
+        Println salto
+        Println errorABRIR1
 
         MOV AH, 02h
         MOV DL, errorCode
         INT 21h
 
-    ExitOpenFile:
+    ExitAbrirCSV:
 ENDM
 
-CloseFile MACRO handler
-    LOCAL ErrorToClose, ExitCloseFile
+cerrarCSV MACRO handler
+    LOCAL ErrorToClose, ExitcerrarCSV
     MOV AH, 3Eh
     MOV BX, handler
     INT 21h
 
     JC ErrorToClose
 
-    PrintCadena salto
-    PrintCadena exitCloseFileMsg
-    JMP ExitCloseFile
+    Println salto
+    Println terminarCsv
+    JMP ExitcerrarCSV
 
     ErrorToClose:
         MOV errorCode, AL
         ADD errorCode, 48
 
-        PrintCadena salto
-        PrintCadena errorCloseFile
+        Println salto
+        Println errorABRIR2
 
         MOV AH, 02h
         MOV DL, errorCode
         INT 21h
     
-    ExitCloseFile:
+    ExitcerrarCSV:
 ENDM
 
-ReadCSV MACRO handler, buffer
-    LOCAL LeerByte, ErrorReadCSV, ExitReadCSV
+leerCSV MACRO handler, buffer
+    LOCAL LeerByte, ErrorleerCSV, ExitleerCSV
 
     MOV BX, handler
     MOV CX, 1
@@ -112,7 +112,7 @@ ReadCSV MACRO handler, buffer
         MOV AX, 3F00h
         INT 21h
 
-        JC ErrorReadCSV
+        JC ErrorleerCSV
 
         INC DX
         MOV SI, DX
@@ -130,7 +130,7 @@ ReadCSV MACRO handler, buffer
         PUSH CX
         PUSH DX
 
-        obtenerPosApuntador handler, 1, posApuntador
+        linkearNumAp handler, 1, posApuntador
 
         POP DX
         POP CX
@@ -138,21 +138,21 @@ ReadCSV MACRO handler, buffer
         MOV AX, posApuntador
 
         CMP extensionArchivo, AX
-        JBE ExitReadCSV
+        JBE ExitleerCSV
         JMP LeerByte
 
-    ErrorReadCSV:
+    ErrorleerCSV:
         MOV errorCode, AL
         ADD errorCode, 48
 
-        PrintCadena salto
-        PrintCadena errorReadFile
+        Println salto
+        Println errorABRIR3
 
         MOV AH, 02h
         MOV DL, errorCode
         INT 21h
 
-    ExitReadCSV:
+    ExitleerCSV:
 ENDM
 
 ConvertirNumero MACRO
@@ -188,25 +188,25 @@ ConvertirNumero MACRO
         MOV numDatos, BX
 ENDM
 
-GetSizeFile MACRO handler
+tamFile MACRO handler
     LOCAL ErrorGetSize, ExitGetSize
-    obtenerPosApuntador handler, 2, extensionArchivo
+    linkearNumAp handler, 2, extensionArchivo
     JC ErrorGetSize
 
     MOV extensionArchivo, AX
-    obtenerPosApuntador handler, 0, posApuntador
+    linkearNumAp handler, 0, posApuntador
     JC ErrorGetSize
 
-    PrintCadena salto
-    PrintCadena exitSizeFileMsg
+    Println salto
+    Println terminarCsv2 
     JMP ExitGetSize
 
     ErrorGetSize:
         MOV errorCode, AL
         ADD errorCode, 48
 
-        PrintCadena salto
-        PrintCadena errorSizeFile
+        Println salto
+        Println errorABRIR4
 
         MOV AH, 02h
         MOV DL, errorCode
@@ -215,7 +215,7 @@ GetSizeFile MACRO handler
     ExitGetSize:
 ENDM
 
-obtenerPosApuntador MACRO handler, posActual, bufferPos
+linkearNumAp MACRO handler, posActual, bufferPos
     MOV AH, 42h
     MOV AL, posActual
     MOV BX, handler
@@ -238,8 +238,8 @@ PedirCadena MACRO buffer
     MOV filename[SI], 0
 ENDM
 
-OrderData MACRO
-    LOCAL for1, for2, Intercambio, terminarFor2
+burbuja MACRO
+    LOCAL forA, forB, Rmovimiento, terminarforB
     XOR AX, AX
     XOR CX, CX
     XOR DX, DX
@@ -247,34 +247,34 @@ OrderData MACRO
     MOV CX, numDatos
     DEC CX
     MOV DL, 0
-    for1:
+    forA:
         PUSH CX
 
         MOV CX, numDatos
         DEC CX
         SUB CX, DX
         MOV BX, 0
-        for2:
+        forB:
             MOV AL, bufferDatos[BX]
             MOV AH, bufferDatos[BX + 1]
             CMP AL, AH
-            JA Intercambio
+            JA Rmovimiento
             INC BX
-            LOOP for2
-            JMP terminarFor2
+            LOOP forB
+            JMP terminarforB
 
-            Intercambio:
+            Rmovimiento:
                 XCHG AL, AH
                 MOV bufferDatos[BX], AL
                 MOV bufferDatos[BX + 1], AH
                 INC BX
 
-            LOOP for2
+            LOOP forB
 
-        terminarFor2:
+        terminarforB:
             POP CX
             INC DL
-            LOOP for1
+            LOOP forA
 ENDM
 
 Promedio MACRO
@@ -299,17 +299,17 @@ Promedio MACRO
     MOV decimal, DX
     MOV SI, 0
 
-    CrearCadena entero, cadenaResult
+    LinkNum entero, resImprimir
 
-    MOV cadenaResult[SI], 46
+    MOV resImprimir[SI], 46
     INC SI
 
     CMP decimal, 0
     JNE CicloDecimal
 
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     JMP ContinuarProm
 
     CicloDecimal:
@@ -324,7 +324,7 @@ Promedio MACRO
 
         MOV decimal, DX
         MOV entero, AX
-        CrearCadena entero, cadenaResult
+        LinkNum entero, resImprimir
         MOV AL, cantDecimal
         INC AL
         MOV cantDecimal, AL
@@ -333,9 +333,9 @@ Promedio MACRO
 
     ContinuarProm:
         MOV cantDecimal, 0
-        PrintCadena salto
-        PrintCadena msgPromedio
-        PrintCadena cadenaResult
+        Println salto
+        Println promResultado
+        Println resImprimir
 ENDM
 
 
@@ -347,18 +347,18 @@ Maximo MACRO
     MOV entero, AX
     MOV SI, 0
 
-    CrearCadena entero, cadenaResult
-    MOV cadenaResult[SI], 46
+    LinkNum entero, resImprimir
+    MOV resImprimir[SI], 46
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 36
+    MOV resImprimir[SI], 36
 
-    PrintCadena salto
-    PrintCadena msgMaximo
-    PrintCadena cadenaResult
+    Println salto
+    Println maxResultado
+    Println resImprimir
 ENDM
 
 Minimo MACRO
@@ -367,18 +367,18 @@ Minimo MACRO
     MOV entero, AX
     MOV SI, 0
 
-    CrearCadena entero, cadenaResult
-    MOV cadenaResult[SI], 46
+    LinkNum entero, resImprimir
+    MOV resImprimir[SI], 46
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 36
+    MOV resImprimir[SI], 36
 
-    PrintCadena salto
-    PrintCadena msgMinimo
-    PrintCadena cadenaResult
+    Println salto
+    Println minResultado 
+    Println resImprimir
 ENDM
 
 Mediana MACRO
@@ -401,15 +401,15 @@ Mediana MACRO
     MOV entero, DX
     MOV SI, 0
 
-    CrearCadena entero, cadenaResult
+    LinkNum entero, resImprimir
 
-    MOV cadenaResult[SI], 46
+    MOV resImprimir[SI], 46
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 48
+    MOV resImprimir[SI], 48
     INC SI
-    MOV cadenaResult[SI], 36
+    MOV resImprimir[SI], 36
     JMP ExitCalcMediana
 
     CalcPromedio:
@@ -424,19 +424,19 @@ Mediana MACRO
         MOV decimal, DX
         MOV SI, 0
 
-        CrearCadena entero, cadenaResult
+        LinkNum entero, resImprimir
 
-        MOV cadenaResult[SI], 46
+        MOV resImprimir[SI], 46
         INC SI
 
         CMP decimal, 0
         JNE CicloDecimal
 
-        MOV cadenaResult[SI], 48
+        MOV resImprimir[SI], 48
         INC SI
-        MOV cadenaResult[SI], 48
+        MOV resImprimir[SI], 48
         INC SI
-        MOV cadenaResult[SI], 36
+        MOV resImprimir[SI], 36
         JMP ExitCalcMediana
 
         CicloDecimal:
@@ -451,7 +451,7 @@ Mediana MACRO
 
             MOV decimal, DX
             MOV entero, AX
-            CrearCadena entero, cadenaResult
+            LinkNum entero, resImprimir
             MOV AL, cantDecimal
             INC AL
             MOV cantDecimal, AL
@@ -460,9 +460,9 @@ Mediana MACRO
 
     ExitCalcMediana:
         MOV cantDecimal, 0
-        PrintCadena salto
-        PrintCadena msgMediana
-        PrintCadena cadenaResult
+        Println salto
+        Println medResultado
+        Println resImprimir
 
 ENDM
 
@@ -472,16 +472,16 @@ ContadorDatos MACRO
     MOV entero, AX
     MOV SI, 0
 
-    CrearCadena entero, cadenaResult
+    LinkNum entero, resImprimir
 
-    MOV cadenaResult[SI], 36
+    MOV resImprimir[SI], 36
 
-    PrintCadena salto
-    PrintCadena msgContadorDatos
-    PrintCadena cadenaResult
+    Println salto
+    Println contResultado
+    Println resImprimir
 ENDM
 
-BuildTablaFrecuencias MACRO
+SacarFrecuenciasDatos MACRO
     LOCAL forDatos, saveFrecuencia, ExitModa
     XOR AX, AX
     XOR BX, BX
@@ -523,8 +523,8 @@ BuildTablaFrecuencias MACRO
     ExitModa:
 ENDM
 
-OrderFrecuencies MACRO
-    LOCAL for1, for2, Intercambio, terminarFor2
+bFrecuencias MACRO
+    LOCAL forA, forB, Rmovimiento, terminarforB
     XOR AX, AX
     XOR BX, BX
     XOR CX, CX
@@ -533,26 +533,26 @@ OrderFrecuencies MACRO
     MOV CL, numEntradas
     DEC CX
     MOV DL, 0
-    for1:
+    forA:
         PUSH CX
 
         MOV CL, numEntradas
         DEC CX
         SUB CX, DX
         MOV SI, 0
-        for2:
+        forB:
             MOV AH, tablaFrecuencias[SI]
             MOV AL, tablaFrecuencias[SI + 1]
             MOV BH, tablaFrecuencias[SI + 2]
             MOV BL, tablaFrecuencias[SI + 3]
 
             CMP AL, BL
-            JA Intercambio
+            JA Rmovimiento
             ADD SI, 2
-            LOOP for2
-            JMP terminarFor2
+            LOOP forB
+            JMP terminarforB
 
-            Intercambio:
+            Rmovimiento:
                 XCHG AX, BX
                 MOV tablaFrecuencias[SI], AH
                 MOV tablaFrecuencias[SI + 1], AL
@@ -560,12 +560,12 @@ OrderFrecuencies MACRO
                 MOV tablaFrecuencias[SI + 3], BL
                 ADD SI, 2
 
-            LOOP for2
+            LOOP forB
         
-        terminarFor2:
+        terminarforB:
             POP CX
             INC DL
-            LOOP for1
+            LOOP forA
 
 ENDM
 
@@ -583,34 +583,34 @@ Moda MACRO
         XOR AX, AX
         XOR BX, BX
 
-        MOV AL, tablaFrecuencias[DI] ; ? Frecuencia
+        MOV AL, tablaFrecuencias[DI] ; se agarran los datos de la frecnueci y luego valor [mismo arr]
         DEC DI
-        MOV BL, tablaFrecuencias[DI] ; ? Valor
+        MOV BL, tablaFrecuencias[DI] 
         DEC DI
         
         PUSH AX
         MOV entero, BX
         MOV SI, 0
-        MOV base, 10000
-        CrearCadena entero, cadenaResult
-        MOV cadenaResult[SI], 36
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        MOV resImprimir[SI], 36
 
-        PrintCadena salto
-        PrintCadena msgModa1
-        PrintCadena cadenaResult
+        Println salto
+        Println  numModaResultado 
+        Println resImprimir
         POP AX
         MOV entero, AX
         
         PUSH AX
         MOV SI, 0
-        MOV base, 10000
+        MOV rgbb, 10000
 
-        CrearCadena entero, cadenaResult
-        MOV cadenaResult[SI], 36
+        LinkNum entero, resImprimir
+        MOV resImprimir[SI], 36
 
-        PrintCadena salto
-        PrintCadena msgModa2
-        PrintCadena cadenaResult
+        Println salto
+        Println vecesModa
+        Println resImprimir
 
         POP AX
         
@@ -621,11 +621,11 @@ Moda MACRO
     ExitCalcModa:
 ENDM
 
-PrintTablaFrecuencias MACRO
+MostrarFrecuencias MACRO
     LOCAL tabla, ExitPrintTabla
-    PrintCadena salto
-    PrintCadena msgEncabezadoTabla
-    PrintCadena salto
+    Println salto
+    Println marcoTablaFrec
+    Println salto
 
     XOR AX, AX
     XOR BX, BX
@@ -649,28 +649,28 @@ PrintTablaFrecuencias MACRO
         PUSH AX
         MOV entero, BX
         MOV SI, 0
-        MOV base, 10000
-        CrearCadena entero, cadenaResult
-        MOV cadenaResult[SI], 36
-        PrintCadena espacios
-        PrintCadena cadenaResult
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        MOV resImprimir[SI], 36
+        Println espacios
+        Println resImprimir
 
         POP AX
         MOV entero, AX
         
         MOV SI, 0
-        MOV base, 10000
-        CrearCadena entero, cadenaResult
-        MOV cadenaResult[SI], 36
-        PrintCadena espacios
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        MOV resImprimir[SI], 36
+        Println espacios
 
         MOV AH, 2
         MOV DL, 124
         INT 21h
 
-        PrintCadena espacios
-        PrintCadena cadenaResult
-        PrintCadena salto
+        Println espacios
+        Println resImprimir
+        Println salto
 
         POP CX
         DEC CX
@@ -686,6 +686,72 @@ getOpcion MACRO regOpcion
     INT 21h
 
     MOV regOpcion, AL
+ENDM
+
+
+GenerarRep MACRO nombreArchivo, handler
+    LOCAL ManejarError, FinGenerarRep
+    MOV AH, 3Ch
+    MOV CX, 00h
+    LEA DX, nombreArchivo
+    INT 21h
+
+    MOV handler, AX
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinGenerarRep
+
+    ManejarError:
+        Println salto
+        Println errorGenerarRep
+        GetOpcion
+    
+    FinGenerarRep:
+ENDM
+
+EscribirRep MACRO cadena, handler
+    LOCAL ManejarError, FinEscribirRep
+    MOV AH, 40h
+    MOV BX, handler
+    MOV CX, 56
+    LEA DX, cadena
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinEscribirRep
+
+    ManejarError:
+        Println salto
+        Println errorEscribirRep
+        GetOpcion
+
+    FinEscribirRep:
+ENDM
+
+
+CerrarREP MACRO handler
+    LOCAL ManejarError, FinCerrarREP
+    MOV AH, 3Eh
+    MOV BX, handler
+    INT 21h
+
+    RCL BL, 1
+    AND BL, 1
+    CMP BL, 1
+    JE ManejarError
+    JMP FinCerrarREP
+
+    ManejarError:
+        Println salto
+        Println errorCerrarREP
+        GetOpcion
+
+    FinCerrarREP:
 ENDM
 
 .MODEL small
@@ -714,40 +780,64 @@ ENDM
     buffer db 300 dup("$")
 
 ;----------
+
     handlerFile         dw ?
     filename            db 30 dup(32)
     bufferDatos         db 300 dup (?)
     errorCode           db ?
-    errorOpenFile       db "Ocurrio Un Error Al Abrir El Archivo - ERRCODE: ", "$"
-    errorCloseFile      db "Ocurrio Un Error Al Cerrar El Archivo - ERRCODE: ", "$"
-    errorReadFile       db "Ocurrio Un Error Al Leer El CSV - ERRCODE: ", "$"
-    errorSizeFile       db "Ocurrio Un Error Obteniendo El Size Del Archivo - ERRCODE: ", "$"
-    exitOpenFileMsg     db "El Archivo Se Abrio Correctamente", "$"
-    exitCloseFileMsg    db "El Archivo Se Cerro Correctamente", "$"
-    exitSizeFileMsg     db "Se Obtuvo La Longitud Correctamente", "$"
-    msgToRequestFile    db "Ingrese El Nombre Del Archivo CSV: ", "$"
-    msgPromedio         db "El Promedio De Los Datos Es: ", "$"
-    msgMaximo           db "El Valor Maximo De Los Datos Es: ", "$"
-    msgMinimo           db "El Valor Minimo De Los Datos Es: ", "$"
-    msgMediana          db "El Valor De la Mediana De Los Datos Es: ", "$"
-    msgContadorDatos    db "El Total De Datos Utilizados Ha Sido De: ", "$"
-    msgModa1            db "La Moda De Los Datos Es: ", "$"
-    msgModa2            db "Con Una Frecuencia De: ", "$"
-    msgEncabezadoTabla  db "-> Valor    -> Frecuencia", "$"
+
+;-----------------DATOS DE ABRIR 
+    errorABRIR1       db ">>error al abrir el scv", "$"
+    errorABRIR2      db ">>error al cerrar el csv ", "$"
+    errorABRIR3       db ">> se intento, pero no logro leer el archivo ", "$"
+    errorABRIR4      db ">> error al obtener los datos ", "$"
+    archivoLeido     db "--->> Archivo csv leido correctamente", "$"
+    terminarCsv    db "=====================================", "$"
+    terminarCsv2     db "=====================================", "$"
+    pedirNomberCsv    db "Nombre del archivo con los datos a analizar CSV: ", "$"
+
+
+; --- funciones estadisticas
+    promResultado        db "promedio calculado >>> ",10,13 ,"$"
+    maxResultado           db "maximo calculado >>> ",10,13, "$"
+    minResultado           db "minimo calculado >>>", 10,13,"$"
+    medResultado          db "mediana calculada >>> ",10,13, "$"
+    contResultado   db "cantidad de datos >>> ",10,13, "$"
+    numModaResultado            db "moda >> ",10,13, "$"
+    vecesModa            db "caldidad de veces que se repite >> ", "$"
+    marcoTablaFrec  db "Valor ================== frecuencias", "$"
+    separador  db "====================================================",10,13, "$"
+
+
     salto               db 10, 13, "$"
     espacios            db 32, 32, 32, 32, 32, "$"
     numCSV              db 3 dup(?)
-    cadenaResult        db 6 dup("$")
+    resImprimir        db 6 dup("$")
     tablaFrecuencias    db 100 dup(?)
     numEntradas         db 1
     indexDatos          dw 0
     extensionArchivo    dw 0
     posApuntador        dw 0
     numDatos            dw 0
-    base                dw 10000
+    rgbb                dw 10000
     entero              dw ?
     decimal             dw ?
     cantDecimal         db 0
+
+; reporte <----------------
+    handlerReporte dw ?
+    nombreArchivo db "20220007.txt", 00h
+
+    strValido db "elegir cadena valida", "$"
+
+    errorGenerarRep db "NO SE PUDO CREAR UN ARCHIVO PARA EL REPORTE", "$"
+    errorEscribirRep db "NO SE PUDO ESCRIBIR EL REPORTE", "$"
+    errorCerrarREP db "ERROR AL CERRAR EL ARCHIVO", "$"
+    reporteArchivo1 db "---> Nombre: Natalia Mariel Calderon  - 202200007 <---",10,13,"---"
+    reporteArchivo2 db "---> Hora:19:00:00  - Fecha: 30/04/2024 <---",10,13,"---"
+    reporteArchivo3 db "moda:",10,13,"mediana:", 10,13,"promedio:", 10,13,"maxima:",10,13,"minima:", 10,13,"contador:",10,13,"--"
+    reporteArchivo4 db "=",10,13,"Valor ================== frecuencias",10,13,10,13,"===================================="
+    bufferReporte db 360 dup("$")
 
 .CODE
     MOV AX, @data
@@ -758,13 +848,13 @@ ENDM
     ; se imprime todo
     Main PROC
         LimpiarConsola
-        PrintCadena mensajeSeparacion
-            PrintCadena mensajeInicio
-            PrintCadena mensajeSeparacion
-            PrintCadena mensajeDatos
-            PrintCadena mensajeDatosDos
-            PrintCadena mensajeDatosTres
-            PrintCadena mensajeSeparacion
+        Println mensajeSeparacion
+            Println mensajeInicio
+            Println mensajeSeparacion
+            Println mensajeDatos
+            Println mensajeDatosDos
+            Println mensajeDatosTres
+            Println mensajeSeparacion
 
         Menu:
 
@@ -772,6 +862,7 @@ ENDM
 ;mediana(M)", 10, 13, "moda(o)", 10, 13, "TablaFrec (f)
 
             getOpcion opcion ; OPCION
+
             CMP opcion, 97 ; Abrir el archivo(a)
             JE AbrirAux
             ;--------------------------------
@@ -807,6 +898,9 @@ ENDM
             ;-----------------------------
             CMP opcion, 115 ;  SALIR (s)
             JE SalirAux
+
+        Println strValido
+        JMP Menu
 
         AbrirAux:
         JMP AbrirL
@@ -847,73 +941,106 @@ ENDM
 
 ;-----------------abrir-------
         AbrirL:
-        PrintCadena msgToRequestFile
+        Println pedirNomberCsv
         PedirCadena filename
 
-        ; * Extraer Informacion Del CSV
-        OpenFile
-        GetSizeFile handlerFile
-        ReadCSV handlerFile, numCSV
-        CloseFile handlerFile
-
-        ; * Ordenar Datos - Ordenamiento Burbuja
-        OrderData
+        AbrirCSV
+        tamFile handlerFile
+        leerCSV handlerFile, numCSV
+        cerrarCSV handlerFile
+        ;ir llenando 
+        GenerarRep nombreArchivo, handlerReporte
+        ; * los ordena en burbuja
+        burbuja
 
         JMP Menu
 ;-------------------prom---------
     PromedioL:
         Promedio
-        MOV base, 10000
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        EscribirRep promResultado, handlerReporte
+        EscribirRep resImprimir, handlerReporte
+        EscribirRep separador, handlerReporte
+        MOV rgbb, 10000
 
     JMP Menu
 ;-------------------mediana------
         MedianaL:
         Mediana
-        MOV base, 10000
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        EscribirRep medResultado, handlerReporte
+        EscribirRep resImprimir, handlerReporte
+        EscribirRep separador, handlerReporte
         JMP Menu
  ;-------------------contador---------       
         ContadorL:
         ContadorDatos
-        MOV base, 10000
+        MOV rgbb, 10000
+        LinkNum entero, resImprimir
+        EscribirRep contResultado, handlerReporte
+        EscribirRep resImprimir, handlerReporte
+        EscribirRep separador, handlerReporte
 
         JMP Menu
 ;-------------------moda
         ModaL:
-        BuildTablaFrecuencias
-        OrderFrecuencies
-        MOV base, 10000
+        SacarFrecuenciasDatos
+        bFrecuencias
+        MOV rgbb, 10000
         Moda
-        MOV base, 10000
+        EscribirRep numModaResultado, handlerReporte
+        MOV rgbb, 10000
         JMP Menu
 ;------------------Maximo
         MaxL:
         Maximo
-        MOV base, 10000
+        LinkNum entero, resImprimir
+        EscribirRep maxResultado, handlerReporte
+        EscribirRep resImprimir, handlerReporte
+        EscribirRep separador, handlerReporte
+        MOV rgbb, 10000
+        
         JMP Menu
 ;------------------Min
         MinL:
         Minimo
-        MOV base, 10000
+        LinkNum entero, resImprimir
+        EscribirRep minResultado, handlerReporte
+        EscribirRep resImprimir, handlerReporte
+        EscribirRep separador, handlerReporte
+        MOV rgbb, 10000
         JMP Menu
 ;-------------------limpiar
 
 ;-------------------tabla
         TablaL:
-        PrintTablaFrecuencias
+        MostrarFrecuencias
         JMP Menu
 
 ;--------------------reporte
 
         ReporteL:
-PrintCadena mensajeSeparacion
+Println mensajeSeparacion
+            ;GenerarRep nombreArchivo, handlerReporte
+            EscribirRep separador, handlerReporte
+            EscribirRep reporteArchivo4, handlerReporte
+            EscribirRep reporteArchivo1, handlerReporte
+            EscribirRep reporteArchivo2, handlerReporte
+            ;EscribirRep reporteArchivo3, handlerReporte
+            
+
+            CerrarREP handlerReporte
+
         JMP Menu
 
 ;--------------------infor
         InfoL:
-            PrintCadena mensajeSeparacion
-            PrintCadena infoUno
-            PrintCadena infoDos
-            PrintCadena mensajeSeparacion
+            Println mensajeSeparacion
+            Println infoUno
+            Println infoDos
+            Println mensajeSeparacion
         JMP Menu
 
 ;-----------------------
